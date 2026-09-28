@@ -1,56 +1,116 @@
-# Welcome to your Expo app 👋
+# 💰 Fingest — Personal Finance Management App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Fingest is a mobile personal finance management application built with **React Native, Expo, and TypeScript**.
 
-## Get started
+The project aims to provide a simple and intuitive way to manage personal finances by allowing users to track income and expenses, organize transactions, analyze spending habits, and monitor financial goals through a modern mobile interface.
 
-1. Install dependencies
+> 🚧 **Currently in development** — new features and improvements are being added as the project evolves.
 
-   ```bash
-   npm install
-   ```
+## ✨ Features
 
-2. Start the app
+- 💰 Income and expense tracking
+- 🏷️ Transaction categorization
+- 📅 Transaction history organized by date and month
+- 🔎 Transaction filtering by income and expenses
+- 📊 Financial dashboard with balance, income, and expense overview
+- 📈 Financial statistics and data visualization
+- 🧾 Financial reports and spending summaries
+- 📊 Expense analysis by category and time period
+- 🎯 Financial goals and progress tracking
+- 💾 Local data persistence
+- 🗑️ Transaction management and deletion
+- 👤 User profile and preferences
+- 🌙 Modern dark-themed interface
+- 📱 Cross-platform mobile experience
 
-   ```bash
-   npx expo start
-   ```
+## 🛠️ Technologies
 
-In the output, you'll find options to open the app in a
+- **React Native**
+- **Expo**
+- **TypeScript**
+- **Expo Router**
+- **AsyncStorage**
+- **React Hooks**
+- **Ionicons**
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 📱 Screens
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+The application is structured around five main areas:
 
-## Get a fresh project
+- **Home** — financial overview and recent activity
+- **Transactions** — complete transaction history and filtering
+- **New Transaction** — add income or expenses with categories and dates
+- **Goals** — create and monitor financial goals
+- **Profile** — user preferences and application settings
 
-When you're ready, run:
+## 💾 Data Storage
+
+Transaction data is currently stored locally on the device using **AsyncStorage**.
+
+Each transaction contains information such as:
+
+- Transaction type (income or expense)
+- Value
+- Category
+- Description
+- Date
+- Creation date
+
+## 🎯 Project Goals
+
+This project is being developed as a way to strengthen my knowledge of:
+
+- Mobile application development with React Native
+- TypeScript
+- React Hooks and state management
+- Data persistence
+- Component-based architecture
+- Mobile UI/UX design
+- Git and GitHub workflows
+
+## 🚀 Getting Started
+
+Clone the repository:
 
 ```bash
-npm run reset-project
+git clone https://github.com/Joaquim-Alencar/Personal-Finance-Management-App.git
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Navigate to the project:
 
-### Other setup steps
+```bash
+cd Personal-Finance-Management-App
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Install the dependencies:
 
-## Learn more
+```bash
+npm install
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Start the Expo development server:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npx expo start
+```
 
-## Join the community
+You can then run the application using Expo Go, an Android emulator, an iOS simulator, or the web version supported by Expo.
 
-Join our community of developers creating universal apps.
+## 📌 Project Status
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+🚧 **In Development**
+
+Fingest is an ongoing project. The current focus is on implementing the core financial management functionality and improving the user interface.
+
+Future development will include more detailed financial analytics, reports, goals, and additional quality-of-life features.
+
+## 👤 Author
+
+**Joaquim Alencar**
+
+Computer Engineering Student  
+Instituto Politécnico de Leiria
+
+## 📄 License
+
+This project is licensed under the terms specified in the [LICENSE](LICENSE) file.
