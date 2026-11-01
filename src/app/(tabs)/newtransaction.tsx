@@ -5,12 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
 import {
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
 
 export default function HomeScreen() {
@@ -21,6 +21,7 @@ export default function HomeScreen() {
   const [date, setDate] = useState(new Date()); // Guarda a data da transação
   const [transacao, setTransacao] = useState('despesa'); // Guarda o tipo de transação
   const [valor, setValor] = useState('');//Guarda o valor da transação
+  const [saldo, setSaldo] = useState(0);
 
   //----------Variaveis de controle de alertas e datepicker
   const [showAlert, setShowAlert] = useState(false);
