@@ -215,18 +215,18 @@ async function confirmTransaction() {
         <Pressable
           style={[
             styles.category,
-            category === 'house' && styles.categorySelected,
+            category === 'transaction' && styles.categorySelected,
           ]}
-          onPress={() => setCategory('house')}
+          onPress={() => setCategory('transaction')}
         >
           <Ionicons
-            name="home-outline"
+            name="swap-horizontal-outline"
             size={24}
             color="white"
           />
 
           <Text style={styles.categoryText}>
-            Moradia
+            Transação
           </Text>
         </Pressable>
 

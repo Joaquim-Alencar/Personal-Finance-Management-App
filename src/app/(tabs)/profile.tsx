@@ -11,7 +11,6 @@ import {
   View,
 } from 'react-native';
 
-
 import Svg, {
   Circle,
   Line,
@@ -24,6 +23,8 @@ import {
   getMonthlyIncomeExpenses,
   type ExpensePeriod,
 } from '@/utils/finance';
+
+import { categoryInfo } from '@/components/TransactionItems';
 
 // TIPOS
 
@@ -39,23 +40,6 @@ type CategoryExpense = {
 };
 
 const screenWidth = Dimensions.get('window').width;
-
-// INFORMAÇÃO DAS CATEGORIAS
-
-const categoryInfo: Record<
-  string,
-  { name: string; color: string }
-> = {
-  food: { name: 'Alimentação', color: '#FF9F43' },
-  transport: { name: 'Transporte', color: '#459CF5' },
-  house: { name: 'Moradia', color: '#A855F7' },
-  leisure: { name: 'Lazer', color: '#EC4899' },
-  health: { name: 'Saúde', color: '#FF4D61' },
-  education: { name: 'Educação', color: '#38BDF8' },
-  shopping: { name: 'Compras', color: '#FBBF24' },
-  bills: { name: 'Contas', color: '#35D07F' },
-  other: { name: 'Outros', color: '#9296A5' },
-};
 
 const chartConfig = {
   backgroundGradientFrom: '#12151D',
@@ -259,14 +243,22 @@ function CategoryDonut({
   const circumference = 2 * Math.PI * radius;
   const gap = 8;
 
+  // Centro do gráfico e posição das percentagens.
+  const center = 150;
+  const labelRadius = 117;
+  const leftLabelRadius = 132;
+
   return (
     <View>
 
       {/* GRÁFICO CIRCULAR */}
 
       <View style={styles.donutContainer}>
-        <Svg width={240} height={240}>
-
+        <Svg
+          width={300}
+          height={300}
+          viewBox="0 0 300 300"
+        >
           {total > 0 &&
             data.map((item, index) => {
               const previousTotal = data
@@ -288,34 +280,78 @@ function CategoryDonut({
                 (previousTotal / total) *
                 circumference;
 
+              const category =
+                categoryInfo[item.category.toLowerCase()] ??
+                categoryInfo.other;
+
+              // Ângulo central do segmento.
+              const middleAngle =
+                -90 +
+                ((previousTotal + item.value / 2) / total) * 360;
+
+              // Converter o ângulo para coordenadas SVG.
+              const angleInRadians =
+                (middleAngle * Math.PI) / 180;
+
+              // Afastar mais as percentagens do lado esquerdo.
+              const currentLabelRadius =
+                Math.cos(angleInRadians) < 0
+                  ? leftLabelRadius
+                  : labelRadius;
+
+              const labelX =
+                center +
+                currentLabelRadius * Math.cos(angleInRadians);
+
+              const labelY =
+                center +
+                currentLabelRadius * Math.sin(angleInRadians);
+
+              const percentage = Math.round(fraction * 100);
+
               return (
-                <Circle
-                  key={item.category}
-                  cx={120}
-                  cy={120}
-                  r={radius}
-                  stroke={
-                    categoryInfo[item.category]?.color ??
-                    '#9296A5'
-                  }
-                  strokeWidth={17}
-                  fill="none"
-                  strokeDasharray={`${segmentLength} ${
-                    circumference - segmentLength
-                  }`}
-                  strokeDashoffset={-offset}
-                  strokeLinecap="round"
-                  rotation={-90}
-                  origin="120, 120"
-                />
+                <React.Fragment key={`${item.category}-${index}`}>
+
+                  {/* SEGMENTO DO GRÁFICO */}
+
+                  <Circle
+                    cx={center}
+                    cy={center}
+                    r={radius}
+                    stroke={category.color}
+                    strokeWidth={17}
+                    fill="none"
+                    strokeDasharray={`${segmentLength} ${
+                      circumference - segmentLength
+                    }`}
+                    strokeDashoffset={-offset}
+                    strokeLinecap="butt"
+                    rotation={-90}
+                    origin={`${center}, ${center}`}
+                  />
+
+                  {/* PERCENTAGEM JUNTO AO SEGMENTO */}
+
+                  <SvgText
+                    x={labelX}
+                    y={labelY + 4}
+                    fontSize={12}
+                    fontWeight="bold"
+                    fill={category.color}
+                    textAnchor="middle"
+                  >
+                    {percentage}%
+                  </SvgText>
+
+                </React.Fragment>
               );
             })}
 
           {/* TOTAL NO CENTRO */}
 
           <SvgText
-            x={120}
-            y={130}
+            x={center}
+            y={center + 10}
             fontSize={27}
             fontWeight="bold"
             fill="#FFFFFF"
@@ -338,6 +374,10 @@ function CategoryDonut({
                 ? (item.value / total) * 100
                 : 0;
 
+            const category =
+              categoryInfo[item.category.toLowerCase()] ??
+              categoryInfo.other;
+
             return (
               <View
                 key={item.category}
@@ -349,16 +389,13 @@ function CategoryDonut({
                     style={[
                       styles.categoryDot,
                       {
-                        backgroundColor:
-                          categoryInfo[item.category]?.color ??
-                          '#9296A5',
+                        backgroundColor: category.color,
                       },
                     ]}
                   />
 
                   <Text style={styles.categoryName}>
-                    {categoryInfo[item.category]?.name ??
-                      item.category}
+                    {category.name}
                   </Text>
                 </View>
 
@@ -676,6 +713,9 @@ const styles = StyleSheet.create({
   // GRÁFICO CIRCULAR
 
   donutContainer: {
+    width: 300,
+    height: 300,
+    alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 8,

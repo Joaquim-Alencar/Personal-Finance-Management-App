@@ -8,6 +8,7 @@ export type Transaction = {
   description: string;
   date: string;
   createdAt: string;
+  goalId?: string;
 };
 
 const TRANSACTIONS_KEY = 'transactions';

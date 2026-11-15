@@ -24,18 +24,27 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
-        }
-      ],
-      "@react-native-community/datetimepicker"
-    ],
+   
+"plugins": [
+  "expo-router",
+  [
+    "expo-splash-screen",
+    {
+      "backgroundColor": "#208AEF",
+      "image": "./assets/images/splash-icon.png",
+      "imageWidth": 76
+    }
+  ],
+  "@react-native-community/datetimepicker",
+  [
+    "expo-navigation-bar",
+    {
+      "enforceContrast": false,
+      "style": "light"
+    }
+  ]
+],
+
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
