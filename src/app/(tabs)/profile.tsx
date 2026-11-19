@@ -11,6 +11,8 @@ import {
   View,
 } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
+
 import Svg, {
   Circle,
   Line,
@@ -20,8 +22,10 @@ import Svg, {
 
 import {
   getExpensesByCategory,
+  getFinancialInsights,
   getMonthlyIncomeExpenses,
   type ExpensePeriod,
+  type Insight,
 } from '@/utils/finance';
 
 import { categoryInfo } from '@/components/TransactionItems';
@@ -40,18 +44,6 @@ type CategoryExpense = {
 };
 
 const screenWidth = Dimensions.get('window').width;
-
-const chartConfig = {
-  backgroundGradientFrom: '#12151D',
-  backgroundGradientTo: '#12151D',
-  decimalPlaces: 0,
-  color: (opacity = 1) =>
-    `rgba(129, 117, 255, ${opacity})`,
-  labelColor: () => '#9296A5',
-  propsForBackgroundLines: {
-    stroke: '#242836',
-  },
-};
 
 // FORMATAR VALORES EM EUROS
 
@@ -80,8 +72,6 @@ function IncomeExpenseChart({
   const plotWidth = plotRight - plotLeft;
   const plotHeight = plotBottom - plotTop;
 
-  // Encontrar o maior valor mensal
-
   const maxValue = Math.max(
     ...data.flatMap((item) => [
       item.income,
@@ -89,8 +79,6 @@ function IncomeExpenseChart({
     ]),
     1
   );
-
-  // Calcular uma escala adequada
 
   const rawStep = maxValue / 4;
 
@@ -130,9 +118,6 @@ function IncomeExpenseChart({
 
   return (
     <Svg width={width} height={height}>
-
-      {/* LINHAS HORIZONTAIS E VALORES */}
-
       {[0, 1, 2, 3, 4].map((index) => {
         const value = (maxScale / 4) * index;
 
@@ -163,8 +148,6 @@ function IncomeExpenseChart({
         );
       })}
 
-      {/* BARRAS DE RECEITAS E DESPESAS */}
-
       {data.map((item, index) => {
         const slotWidth = plotWidth / data.length;
 
@@ -184,9 +167,6 @@ function IncomeExpenseChart({
 
         return (
           <React.Fragment key={`${item.month}-${index}`}>
-
-            {/* RECEITAS - AZUL */}
-
             <Rect
               x={incomeX}
               y={plotBottom - incomeHeight}
@@ -195,8 +175,6 @@ function IncomeExpenseChart({
               rx={4}
               fill="#35A9F5"
             />
-
-            {/* DESPESAS - VERMELHO */}
 
             <Rect
               x={expenseX}
@@ -207,8 +185,6 @@ function IncomeExpenseChart({
               fill="#FF626E"
             />
 
-            {/* NOME DO MÊS */}
-
             <SvgText
               x={centerX}
               y={plotBottom + 24}
@@ -218,11 +194,9 @@ function IncomeExpenseChart({
             >
               {item.month}
             </SvgText>
-
           </React.Fragment>
         );
       })}
-
     </Svg>
   );
 }
@@ -243,16 +217,12 @@ function CategoryDonut({
   const circumference = 2 * Math.PI * radius;
   const gap = 8;
 
-  // Centro do gráfico e posição das percentagens.
   const center = 150;
   const labelRadius = 117;
   const leftLabelRadius = 132;
 
   return (
     <View>
-
-      {/* GRÁFICO CIRCULAR */}
-
       <View style={styles.donutContainer}>
         <Svg
           width={300}
@@ -284,16 +254,13 @@ function CategoryDonut({
                 categoryInfo[item.category.toLowerCase()] ??
                 categoryInfo.other;
 
-              // Ângulo central do segmento.
               const middleAngle =
                 -90 +
                 ((previousTotal + item.value / 2) / total) * 360;
 
-              // Converter o ângulo para coordenadas SVG.
               const angleInRadians =
                 (middleAngle * Math.PI) / 180;
 
-              // Afastar mais as percentagens do lado esquerdo.
               const currentLabelRadius =
                 Math.cos(angleInRadians) < 0
                   ? leftLabelRadius
@@ -311,9 +278,6 @@ function CategoryDonut({
 
               return (
                 <React.Fragment key={`${item.category}-${index}`}>
-
-                  {/* SEGMENTO DO GRÁFICO */}
-
                   <Circle
                     cx={center}
                     cy={center}
@@ -330,8 +294,6 @@ function CategoryDonut({
                     origin={`${center}, ${center}`}
                   />
 
-                  {/* PERCENTAGEM JUNTO AO SEGMENTO */}
-
                   <SvgText
                     x={labelX}
                     y={labelY + 4}
@@ -342,12 +304,9 @@ function CategoryDonut({
                   >
                     {percentage}%
                   </SvgText>
-
                 </React.Fragment>
               );
             })}
-
-          {/* TOTAL NO CENTRO */}
 
           <SvgText
             x={center}
@@ -359,15 +318,11 @@ function CategoryDonut({
           >
             {formatMoney(total)}
           </SvgText>
-
         </Svg>
       </View>
 
-      {/* LISTA DE CATEGORIAS */}
-
       {data.length > 0 ? (
         <View style={styles.categoryList}>
-
           {data.map((item) => {
             const percentage =
               total > 0
@@ -383,7 +338,6 @@ function CategoryDonut({
                 key={item.category}
                 style={styles.categoryRow}
               >
-
                 <View style={styles.categoryNameContainer}>
                   <View
                     style={[
@@ -406,18 +360,115 @@ function CategoryDonut({
                 <Text style={styles.categoryValue}>
                   {formatMoney(item.value)}
                 </Text>
-
               </View>
             );
           })}
-
         </View>
       ) : (
         <Text style={styles.emptyText}>
           Ainda não existem despesas neste período.
         </Text>
       )}
+    </View>
+  );
+}
 
+// SUGESTÕES INTELIGENTES
+
+function FinancialInsights({
+  data,
+}: {
+  data: Insight[];
+}) {
+  const getInsightColor = (type: Insight['type']) => {
+    switch (type) {
+      case 'warning':
+        return '#FF9F43';
+      case 'success':
+        return '#35D07F';
+      default:
+        return '#8175FF';
+    }
+  };
+
+  const iconMap: Record<
+    string,
+    keyof typeof Ionicons.glyphMap
+  > = {
+    'trending-up': 'trending-up-outline',
+    'trending-down': 'trending-down-outline',
+    wallet: 'wallet-outline',
+    'pie-chart': 'pie-chart-outline',
+    'piggy-bank': 'wallet-outline',
+    target: 'flag-outline',
+  };
+
+  return (
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>
+        Sugestões inteligentes
+      </Text>
+
+      <Text style={styles.description}>
+        Algumas ideias para acompanhares melhor as tuas finanças.
+      </Text>
+
+      {data.length > 0 ? (
+        <View style={styles.insightsList}>
+          {data.map((insight) => {
+            // A evolução das despesas fica sempre a roxo, tal como a cor das poupanças.
+            const color = insight.id === 'expenses'
+              ? '#8175FF'
+              : getInsightColor(insight.type);
+
+            return (
+              <View
+                key={insight.id}
+                style={styles.insightCard}
+              >
+                <View style={styles.insightHeader}>
+                  <View
+                    style={[
+                      styles.insightIcon,
+                      { backgroundColor: `${color}20` },
+                    ]}
+                  >
+                    <Ionicons
+                      name={
+                        iconMap[insight.icon] ??
+                        'bulb-outline'
+                      }
+                      size={22}
+                      color={color}
+                    />
+                  </View>
+
+                  <Text style={styles.insightTitle}>
+                    {insight.title}
+                  </Text>
+                </View>
+
+                <Text
+                  style={[
+                    styles.insightMessage,
+                    { color },
+                  ]}
+                >
+                  {insight.message}
+                </Text>
+
+                <Text style={styles.insightSuggestion}>
+                  {insight.suggestion}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      ) : (
+        <Text style={styles.emptyText}>
+          Regista algumas transações para começares a receber sugestões.
+        </Text>
+      )}
     </View>
   );
 }
@@ -425,12 +476,14 @@ function CategoryDonut({
 // COMPONENTE PRINCIPAL
 
 export default function Profile() {
-
   const [categoryExpenses, setCategoryExpenses] =
     useState<CategoryExpense[]>([]);
 
   const [incomeExpenses, setIncomeExpenses] =
     useState<MonthlyIncomeExpense[]>([]);
+
+  const [insights, setInsights] =
+    useState<Insight[]>([]);
 
   const [selectedPeriod, setSelectedPeriod] =
     useState<ExpensePeriod>('month');
@@ -439,18 +492,22 @@ export default function Profile() {
 
   const loadChartData = async () => {
     try {
-      const [categories, incomeExpense] =
-        await Promise.all([
-          getExpensesByCategory(selectedPeriod),
-          getMonthlyIncomeExpenses(),
-        ]);
+      const [
+        categories,
+        incomeExpense,
+        financialInsights,
+      ] = await Promise.all([
+        getExpensesByCategory(selectedPeriod),
+        getMonthlyIncomeExpenses(),
+        getFinancialInsights(),
+      ]);
 
       setCategoryExpenses(categories);
       setIncomeExpenses(incomeExpense);
-
+      setInsights(financialInsights);
     } catch (error) {
       console.error(
-        'Erro ao carregar os gráficos:',
+        'Erro ao carregar os dados do perfil:',
         error
       );
     }
@@ -470,7 +527,6 @@ export default function Profile() {
       style={styles.container}
       contentContainerStyle={styles.content}
     >
-
       <Text style={styles.title}>
         Estatísticas
       </Text>
@@ -482,7 +538,6 @@ export default function Profile() {
       {/* RECEITAS VS DESPESAS */}
 
       <View style={styles.card}>
-
         <Text style={styles.cardTitle}>
           Receitas vs Despesas
         </Text>
@@ -491,10 +546,7 @@ export default function Profile() {
           Comparação dos últimos 6 meses
         </Text>
 
-        {/* LEGENDA */}
-
         <View style={styles.legendContainer}>
-
           <View style={styles.legendItem}>
             <View style={styles.incomeColor} />
 
@@ -510,10 +562,7 @@ export default function Profile() {
               Despesas
             </Text>
           </View>
-
         </View>
-
-        {/* GRÁFICO */}
 
         {incomeExpenses.length > 0 ? (
           <View style={styles.customChart}>
@@ -526,13 +575,11 @@ export default function Profile() {
             Ainda não existem dados para comparar.
           </Text>
         )}
-
       </View>
 
       {/* DESPESAS POR CATEGORIA */}
 
       <View style={styles.card}>
-
         <Text style={styles.cardTitle}>
           Despesas por categoria
         </Text>
@@ -541,16 +588,12 @@ export default function Profile() {
           Distribuição das tuas despesas
         </Text>
 
-        {/* SELEÇÃO DO PERÍODO */}
-
         <View style={styles.periodContainer}>
-
           {([
             { value: 'month', label: 'Mês' },
             { value: 'quarter', label: 'Trimestre' },
             { value: 'year', label: 'Ano' },
           ] as const).map((period) => (
-
             <Pressable
               key={period.value}
               onPress={() =>
@@ -562,7 +605,6 @@ export default function Profile() {
                   styles.periodButtonActive,
               ]}
             >
-
               <Text
                 style={[
                   styles.periodText,
@@ -572,19 +614,18 @@ export default function Profile() {
               >
                 {period.label}
               </Text>
-
             </Pressable>
           ))}
-
         </View>
-
-        {/* GRÁFICO CIRCULAR E LISTA */}
 
         <CategoryDonut
           data={categoryExpenses}
         />
-
       </View>
+
+      {/* SUGESTÕES INTELIGENTES */}
+
+      <FinancialInsights data={insights} />
 
     </ScrollView>
   );
@@ -593,7 +634,6 @@ export default function Profile() {
 // ESTILOS
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
     backgroundColor: '#080A10',
@@ -767,6 +807,56 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 
+  // SUGESTÕES INTELIGENTES
+
+  insightsList: {
+    marginTop: 18,
+    gap: 12,
+  },
+
+  insightCard: {
+    backgroundColor: '#191D28',
+    borderRadius: 13,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#242836',
+  },
+
+  insightHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    marginBottom: 12,
+  },
+
+  insightIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  insightTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+
+  insightMessage: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 21,
+  },
+
+  insightSuggestion: {
+    color: '#9296A5',
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 7,
+  },
+
   // OUTROS
 
   emptyText: {
@@ -775,5 +865,4 @@ const styles = StyleSheet.create({
     marginTop: 20,
     textAlign: 'center',
   },
-
 });

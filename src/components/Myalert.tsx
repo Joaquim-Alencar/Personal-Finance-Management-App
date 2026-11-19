@@ -229,14 +229,12 @@ const styles = StyleSheet.create({
   // Confirmar
   confirmButton: {
     flex: 1,
-
-    paddingVertical: 14,
-
-    borderRadius: 12,
-
-    alignItems: 'center',
+    minHeight: 80,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    borderRadius: 20,
     justifyContent: 'center',
-
+    alignItems: 'center',
     backgroundColor: colors.primary,
   },
 

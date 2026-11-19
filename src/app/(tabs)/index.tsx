@@ -1,5 +1,9 @@
+
 import TransactionItem from '@/components/TransactionItems';
-import { getTransactions } from '@/storage/transactions';
+import {
+  getRecurringAmountThisMonth,
+  getTransactions,
+} from '@/storage/transactions';
 import { globalStyles } from '@/styles/global';
 
 import {
@@ -22,7 +26,6 @@ import {
   View,
 } from 'react-native';
 
-
 // --------------------------------------------------
 // Tipo da transação
 // --------------------------------------------------
@@ -37,6 +40,9 @@ type Transaction = {
   createdAt: string;
 };
 
+// --------------------------------------------------
+// HOME
+// --------------------------------------------------
 
 export default function HomeScreen() {
 
@@ -45,13 +51,16 @@ export default function HomeScreen() {
   // --------------------------------------------------
 
   const [saldo, setSaldo] = useState(0);
-
   const [monthlyBalance, setMonthlyBalance] = useState(0);
-
   const [monthlyIncome, setMonthlyIncome] = useState(0);
-
   const [monthlyExpense, setMonthlyExpense] = useState(0);
 
+  // --------------------------------------------------
+  // Cobranças recorrentes
+  // --------------------------------------------------
+
+  const [recurringAmount, setRecurringAmount] = useState(0);
+  const [recurringCount, setRecurringCount] = useState(0);
 
   // --------------------------------------------------
   // Transações recentes
@@ -60,57 +69,54 @@ export default function HomeScreen() {
   const [recentTransactions, setRecentTransactions] =
     useState<Transaction[]>([]);
 
-
   // --------------------------------------------------
   // Carregar dados
   // --------------------------------------------------
 
   async function loadFinanceData() {
+    try {
+      const total = await getBalance();
+      const monthly = await getMonthlyBalance();
 
-    const total = await getBalance();
+      const income = await getMonthlyBalanceType('receita');
+      const expense = await getMonthlyBalanceType('despesa');
 
-    const monthly = await getMonthlyBalance();
+      const transactions = await getTransactions();
 
-    const income =
-      await getMonthlyBalanceType('receita');
+      // -------------------- Dados financeiros
 
-    const expense =
-      await getMonthlyBalanceType('despesa');
+      setSaldo(total);
+      setMonthlyBalance(monthly);
+      setMonthlyIncome(income);
+      setMonthlyExpense(Math.abs(expense));
 
-    const transactions =
-      await getTransactions();
+      // -------------------- Cobranças recorrentes
 
+      const recurring = transactions.filter(
+        (transaction) => transaction.recurrence
+      );
 
-    // -------------------- Dados financeiros
+      const amountToBeCharged =
+        await getRecurringAmountThisMonth();
 
-    setSaldo(total);
+      setRecurringAmount(amountToBeCharged);
+      setRecurringCount(recurring.length);
 
-    setMonthlyBalance(monthly);
+      // -------------------- Transações recentes
 
-    setMonthlyIncome(income);
+      const sortedTransactions = [...transactions].sort(
+        (a, b) =>
+          new Date(b.date).getTime() -
+          new Date(a.date).getTime()
+      );
 
-    setMonthlyExpense(Math.abs(expense));
-
-
-    // -------------------- Transações recentes
-
-    // Criamos uma cópia antes do sort para não alterar
-    // diretamente o array original.
-
-    const sortedTransactions = [...transactions].sort(
-      (a, b) =>
-        new Date(b.date).getTime() -
-        new Date(a.date).getTime()
-    );
-
-
-    // Apenas as 4 transações mais recentes
-
-    setRecentTransactions(
-      sortedTransactions.slice(0, 3)
-    );
+      setRecentTransactions(
+        sortedTransactions.slice(0, 3)
+      );
+    } catch (error) {
+      console.error('Erro ao carregar dados da Home:', error);
+    }
   }
-
 
   // --------------------------------------------------
   // Atualizar quando entramos na Home
@@ -118,27 +124,20 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-
       loadFinanceData();
-
     }, [])
   );
-
 
   // --------------------------------------------------
   // Percentagem mensal
   // --------------------------------------------------
 
-  const previousBalance =
-    saldo - monthlyBalance;
+  const previousBalance = saldo - monthlyBalance;
 
-
-  const monthlyPercentage =
-    getPercentage(
-      saldo,
-      previousBalance
-    );
-
+  const monthlyPercentage = getPercentage(
+    saldo,
+    previousBalance
+  );
 
   // --------------------------------------------------
   // Cor da percentagem
@@ -151,29 +150,28 @@ export default function HomeScreen() {
       ? '#FF6B6B'
       : '#FFD166';
 
-
   // --------------------------------------------------
   // Ícone da percentagem
   // --------------------------------------------------
 
-  const percentageIcon:
-    keyof typeof Ionicons.glyphMap =
-      monthlyPercentage > 0
-        ? 'trending-up'
-        : monthlyPercentage < 0
-        ? 'trending-down'
-        : 'remove';
+  const percentageIcon: keyof typeof Ionicons.glyphMap =
+    monthlyPercentage > 0
+      ? 'trending-up'
+      : monthlyPercentage < 0
+      ? 'trending-down'
+      : 'remove';
 
+  // --------------------------------------------------
+  // Renderização
+  // --------------------------------------------------
 
   return (
-
     <ScrollView
       style={globalStyles.container}
       contentContainerStyle={{
         paddingBottom: 100,
       }}
     >
-
 
       {/* ==================================================
           TÍTULO
@@ -188,7 +186,6 @@ export default function HomeScreen() {
         Bem Vindo de Volta
       </Text>
 
-
       <Text
         style={[
           globalStyles.smallText,
@@ -198,18 +195,13 @@ export default function HomeScreen() {
         Aqui está o resumo das suas finanças
       </Text>
 
-
-
       {/* ==================================================
           CARD DO SALDO
       ================================================== */}
 
       <View style={styles.balanceCard}>
-
         <View style={styles.balanceHeader}>
-
           <View>
-
             <Text style={styles.balanceLabel}>
               Saldo atual
             </Text>
@@ -217,30 +209,21 @@ export default function HomeScreen() {
             <Text style={styles.balanceValue}>
               {saldo.toFixed(2)} €
             </Text>
-
           </View>
 
-
           <View style={styles.walletIcon}>
-
             <Ionicons
               name="wallet-outline"
               size={26}
               color="#FFFFFF"
             />
-
           </View>
-
         </View>
-
 
         <View style={styles.divider} />
 
-
         <View style={styles.monthRow}>
-
           <View>
-
             <Text style={styles.monthLabel}>
               Este mês
             </Text>
@@ -248,43 +231,27 @@ export default function HomeScreen() {
             <Text style={styles.monthText}>
               Balanço mensal
             </Text>
-
           </View>
 
-
           <View style={styles.percentageContainer}>
-
             <Ionicons
               name={percentageIcon}
               size={18}
               color={percentageColor}
             />
 
-
             <Text
               style={[
                 styles.percentage,
-                {
-                  color: percentageColor,
-                },
+                { color: percentageColor },
               ]}
             >
-
-              {monthlyPercentage > 0
-                ? '+'
-                : ''}
-
+              {monthlyPercentage > 0 ? '+' : ''}
               {monthlyPercentage.toFixed(2)}%
-
             </Text>
-
           </View>
-
         </View>
-
       </View>
-
-
 
       {/* ==================================================
           RECEITAS / DESPESAS
@@ -292,29 +259,23 @@ export default function HomeScreen() {
 
       <View style={styles.summaryRow}>
 
-
-        {/* -------------------- Receitas */}
+        {/* Receitas */}
 
         <View style={styles.summaryCard}>
-
           <View
             style={[
               styles.summaryIcon,
               styles.incomeIconBackground,
             ]}
           >
-
             <Ionicons
               name="arrow-down"
               size={20}
               color="#6EE7A8"
             />
-
           </View>
 
-
           <View style={styles.summaryInfo}>
-
             <Text style={styles.summaryLabel}>
               Receitas
             </Text>
@@ -331,35 +292,26 @@ export default function HomeScreen() {
             <Text style={styles.summaryPeriod}>
               Este mês
             </Text>
-
           </View>
-
         </View>
 
-
-
-        {/* -------------------- Despesas */}
+        {/* Despesas */}
 
         <View style={styles.summaryCard}>
-
           <View
             style={[
               styles.summaryIcon,
               styles.expenseIconBackground,
             ]}
           >
-
             <Ionicons
               name="arrow-up"
               size={20}
               color="#FF6B6B"
             />
-
           </View>
 
-
           <View style={styles.summaryInfo}>
-
             <Text style={styles.summaryLabel}>
               Despesas
             </Text>
@@ -376,14 +328,65 @@ export default function HomeScreen() {
             <Text style={styles.summaryPeriod}>
               Este mês
             </Text>
-
           </View>
-
         </View>
-
       </View>
 
+      {/* ==================================================
+          COBRANÇAS RECORRENTES
+      ================================================== */}
 
+      <View style={styles.recurringCard}>
+
+        <View style={styles.recurringHeader}>
+          <View>
+            <Text style={styles.recurringTitle}>
+              Cobranças recorrentes
+            </Text>
+
+            <Text style={styles.recurringSubtitle}>
+              Previsto para este mês
+            </Text>
+          </View>
+
+          <View style={styles.recurringIcon}>
+            <Ionicons
+              name="repeat-outline"
+              size={23}
+              color="#A78BFA"
+            />
+          </View>
+        </View>
+
+        <Text style={styles.recurringAmount}>
+          {recurringAmount.toFixed(2)} €
+        </Text>
+
+        <View style={styles.recurringFooter}>
+          <Text style={styles.recurringCount}>
+            {recurringCount}{' '}
+            {recurringCount === 1
+              ? 'cobrança ativa'
+              : 'cobranças ativas'}
+          </Text>
+
+          <TouchableOpacity
+            style={styles.manageRecurringButton}
+            activeOpacity={0.7}
+            onPress={() => router.push('/recurring')}
+          >
+            <Text style={styles.manageRecurringText}>
+              Gerir
+            </Text>
+
+            <Ionicons
+              name="chevron-forward"
+              size={15}
+              color="#A78BFA"
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {/* ==================================================
           TRANSAÇÕES RECENTES
@@ -391,17 +394,10 @@ export default function HomeScreen() {
 
       <View style={styles.transactionsSection}>
 
-
-        {/* -------------------- Cabeçalho */}
-
         <View style={styles.transactionsHeader}>
-
           <Text style={styles.transactionsTitle}>
             Transações recentes
           </Text>
-
-
-          {/* Botão para abrir todas as transações */}
 
           <TouchableOpacity
             style={styles.seeAllButton}
@@ -410,7 +406,6 @@ export default function HomeScreen() {
               router.push('/(tabs)/transaction')
             }
           >
-
             <Text style={styles.seeAllText}>
               Ver tudo
             </Text>
@@ -420,65 +415,32 @@ export default function HomeScreen() {
               size={15}
               color="#8B7CFF"
             />
-
           </TouchableOpacity>
-
         </View>
 
-
-
-        {/* -------------------- Lista */}
-
         <View style={styles.transactionsList}>
-
           {recentTransactions.length > 0 ? (
-
-            recentTransactions.map(
-              (transaction) => (
-
-                <TransactionItem
-                  key={transaction.id}
-
-                  id={transaction.id}
-
-                  type={transaction.type}
-
-                  value={transaction.value}
-
-                  category={transaction.category}
-
-                  description={
-                    transaction.description
-                  }
-
-                  date={transaction.date}
-
-                  createdAt={
-                    transaction.createdAt
-                  }
-
-                  // Se apagarmos uma transação
-                  // atualizamos toda a Home
-                  onDelete={loadFinanceData}
-                />
-
-              )
-            )
-
+            recentTransactions.map((transaction) => (
+              <TransactionItem
+                key={transaction.id}
+                id={transaction.id}
+                type={transaction.type}
+                value={transaction.value}
+                category={transaction.category}
+                description={transaction.description}
+                date={transaction.date}
+                createdAt={transaction.createdAt}
+                onDelete={loadFinanceData}
+              />
+            ))
           ) : (
-
-            // -------------------- Sem transações
-
             <View style={styles.emptyTransactions}>
-
               <View style={styles.emptyIcon}>
-
                 <Ionicons
                   name="receipt-outline"
                   size={24}
                   color="#777783"
                 />
-
               </View>
 
               <Text style={styles.emptyTitle}>
@@ -489,388 +451,298 @@ export default function HomeScreen() {
                 As tuas transações recentes
                 vão aparecer aqui.
               </Text>
-
             </View>
-
           )}
-
         </View>
-
       </View>
 
     </ScrollView>
   );
 }
 
-
+// ==================================================
+// ESTILOS
+// ==================================================
 
 const styles = StyleSheet.create({
 
-
-  // ==================================================
   // CARD DO SALDO
-  // ==================================================
 
   balanceCard: {
-
     marginTop: 24,
-
     backgroundColor: '#6758FF',
-
     borderRadius: 24,
-
     padding: 22,
   },
 
-
   balanceHeader: {
-
     flexDirection: 'row',
-
     justifyContent: 'space-between',
-
     alignItems: 'center',
   },
 
-
   balanceLabel: {
-
     color: 'rgba(255,255,255,0.75)',
-
     fontSize: 14,
-
     fontWeight: '500',
   },
 
-
   balanceValue: {
-
     color: '#FFFFFF',
-
     fontSize: 36,
-
     fontWeight: '700',
-
     marginTop: 6,
   },
 
-
   walletIcon: {
-
     width: 52,
-
     height: 52,
-
     borderRadius: 16,
-
-    backgroundColor:
-      'rgba(255,255,255,0.15)',
-
+    backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
-
     justifyContent: 'center',
   },
 
-
   divider: {
-
     height: 1,
-
-    backgroundColor:
-      'rgba(255,255,255,0.18)',
-
+    backgroundColor: 'rgba(255,255,255,0.18)',
     marginVertical: 20,
   },
 
-
   monthRow: {
-
     flexDirection: 'row',
-
     justifyContent: 'space-between',
-
     alignItems: 'center',
   },
 
-
   monthLabel: {
-
     color: '#FFFFFF',
-
     fontSize: 15,
-
     fontWeight: '600',
   },
 
-
   monthText: {
-
     color: 'rgba(255,255,255,0.65)',
-
     fontSize: 12,
-
     marginTop: 3,
   },
 
-
   percentageContainer: {
-
     flexDirection: 'row',
-
     alignItems: 'center',
-
-    backgroundColor:
-      'rgba(0,0,0,0.15)',
-
+    backgroundColor: 'rgba(0,0,0,0.15)',
     paddingHorizontal: 12,
-
     paddingVertical: 7,
-
     borderRadius: 20,
-
     gap: 5,
   },
 
-
   percentage: {
-
     fontSize: 14,
-
     fontWeight: '700',
   },
 
-
-
-  // ==================================================
   // RECEITAS / DESPESAS
-  // ==================================================
 
   summaryRow: {
-
     flexDirection: 'row',
-
     gap: 10,
-
     marginTop: 12,
   },
 
-
   summaryCard: {
-
     flex: 1,
-
     flexDirection: 'row',
-
     alignItems: 'center',
-
     backgroundColor: '#1C1C24',
-
     borderRadius: 16,
-
     paddingHorizontal: 12,
-
     paddingVertical: 12,
   },
 
-
   summaryIcon: {
-
     width: 38,
-
     height: 38,
-
     borderRadius: 12,
-
     alignItems: 'center',
-
     justifyContent: 'center',
-
     marginRight: 10,
   },
 
-
   incomeIconBackground: {
-
-    backgroundColor:
-      'rgba(110,231,168,0.12)',
+    backgroundColor: 'rgba(110,231,168,0.12)',
   },
-
 
   expenseIconBackground: {
-
-    backgroundColor:
-      'rgba(255,107,107,0.12)',
+    backgroundColor: 'rgba(255,107,107,0.12)',
   },
 
-
   summaryInfo: {
-
     flex: 1,
   },
 
-
   summaryLabel: {
-
     color: '#A7A7B3',
-
     fontSize: 11,
-
     fontWeight: '500',
   },
 
-
   summaryValue: {
-
     fontSize: 15,
-
     fontWeight: '700',
-
     marginTop: 2,
   },
 
-
   incomeValue: {
-
     color: '#6EE7A8',
   },
 
-
   expenseValue: {
-
     color: '#FF6B6B',
   },
 
-
   summaryPeriod: {
-
     color: '#696975',
-
     fontSize: 9,
-
     marginTop: 2,
   },
 
+  // COBRANÇAS RECORRENTES
 
-
-  // ==================================================
-  // TRANSAÇÕES RECENTES
-  // ==================================================
-
-  transactionsSection: {
-
-    marginTop: 28,
+  recurringCard: {
+    backgroundColor: '#19172A',
+    borderRadius: 18,
+    padding: 18,
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: '#34304F',
   },
 
-
-  // -------------------- Cabeçalho
-
-  transactionsHeader: {
-
+  recurringHeader: {
     flexDirection: 'row',
-
     justifyContent: 'space-between',
-
     alignItems: 'center',
-
-    marginBottom: 12,
   },
 
-
-  transactionsTitle: {
-
+  recurringTitle: {
     color: '#FFFFFF',
-
-    fontSize: 18,
-
+    fontSize: 16,
     fontWeight: '700',
   },
 
+  recurringSubtitle: {
+    color: '#9296A5',
+    fontSize: 12,
+    marginTop: 4,
+  },
 
-  // -------------------- Ver tudo
+  recurringIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    backgroundColor: '#30284C',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  recurringAmount: {
+    color: '#A78BFA',
+    fontSize: 29,
+    fontWeight: '700',
+    marginTop: 16,
+  },
+
+  recurringFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#34304F',
+  },
+
+  recurringCount: {
+    color: '#9296A5',
+    fontSize: 12,
+  },
+
+  manageRecurringButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+
+  manageRecurringText: {
+    color: '#A78BFA',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
+  // TRANSAÇÕES RECENTES
+
+  transactionsSection: {
+    marginTop: 28,
+  },
+
+  transactionsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+
+  transactionsTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+  },
 
   seeAllButton: {
-
     flexDirection: 'row',
-
     alignItems: 'center',
-
     gap: 2,
   },
 
-
   seeAllText: {
-
     color: '#8B7CFF',
-
     fontSize: 13,
-
     fontWeight: '600',
   },
 
-
-  // -------------------- Lista
-
   transactionsList: {
-
     overflow: 'hidden',
-
     borderRadius: 18,
   },
 
-
-  // -------------------- Sem transações
-
   emptyTransactions: {
-
     backgroundColor: '#1C1C24',
-
     borderRadius: 18,
-
     alignItems: 'center',
-
     paddingVertical: 28,
-
     paddingHorizontal: 20,
   },
 
-
   emptyIcon: {
-
     width: 46,
-
     height: 46,
-
     borderRadius: 14,
-
     backgroundColor: '#24242E',
-
     alignItems: 'center',
-
     justifyContent: 'center',
-
     marginBottom: 10,
   },
 
-
   emptyTitle: {
-
     color: '#FFFFFF',
-
     fontSize: 14,
-
     fontWeight: '600',
   },
 
-
   emptyText: {
-
     color: '#777783',
-
     fontSize: 11,
-
     marginTop: 4,
-
     textAlign: 'center',
   },
-
 });
